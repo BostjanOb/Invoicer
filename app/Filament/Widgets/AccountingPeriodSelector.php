@@ -17,6 +17,8 @@ class AccountingPeriodSelector extends Widget implements HasForms
 
     public ?int $selectedPeriodId = null;
 
+    protected static ?int $sort = 1;
+
     public function mount(): void
     {
         $defaultPeriod = AccountingPeriod::query()

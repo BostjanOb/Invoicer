@@ -13,6 +13,8 @@ class StatsOverview extends BaseWidget
 {
     public ?int $selectedPeriodId = null;
 
+    protected static ?int $sort = 2;
+
     #[On('accounting-period-changed')]
     public function updatePeriod(int $periodId): void
     {

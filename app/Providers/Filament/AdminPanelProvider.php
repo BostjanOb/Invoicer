@@ -16,8 +16,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -47,11 +45,9 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountingPeriodSelector::class,
                 StatsOverview::class,
-                RevenueTrends::class,
                 LatestIssuedInvoices::class,
+                RevenueTrends::class,
                 TopCustomers::class,
-                AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

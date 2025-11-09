@@ -19,6 +19,8 @@ class LatestIssuedInvoices extends BaseWidget
 
     public ?int $selectedPeriodId = null;
 
+    protected static ?int $sort = 3;
+
     #[On('accounting-period-changed')]
     public function updatePeriod(int $periodId): void
     {

@@ -21,6 +21,8 @@ class TopCustomers extends BaseWidget
 
     public ?int $selectedPeriodId = null;
 
+    protected static ?int $sort = 5;
+
     #[On('accounting-period-changed')]
     public function updatePeriod(int $periodId): void
     {
@@ -87,7 +89,7 @@ class TopCustomers extends BaseWidget
                         return $count > 0 ? $total / $count : 0;
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('view')
                     ->label('View')
                     ->url(fn (Customer $record): string => route('filament.admin.resources.customers.view', ['record' => $record]))
