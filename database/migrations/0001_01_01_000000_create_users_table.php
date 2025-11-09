@@ -17,6 +17,22 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
+            $table->string('phone')->nullable();
+            $table->string('signature')->nullable();
+
+            $table->string('company_name')->nullable();
+            $table->string('company_address')->nullable();
+            $table->string('company_city')->nullable();
+            $table->string('company_postcode')->nullable();
+            $table->string('company_country')->nullable();
+            $table->string('company_vat_number')->nullable();
+            $table->string('company_logo')->nullable();
+
+            $table->string('bank_iban')->nullable();
+            $table->string('bank_bic')->nullable();
+            $table->string('bank_name')->nullable();
+
             $table->rememberToken();
             $table->timestamps();
         });

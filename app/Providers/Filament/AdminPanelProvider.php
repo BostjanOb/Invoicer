@@ -2,6 +2,12 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\EditProfile;
+use App\Filament\Widgets\AccountingPeriodSelector;
+use App\Filament\Widgets\LatestIssuedInvoices;
+use App\Filament\Widgets\RevenueTrends;
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\TopCustomers;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -28,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('/')
             ->login()
+            ->profile(EditProfile::class)
             ->colors([
                 'primary' => Color::Orange,
             ])
@@ -38,6 +45,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
+                AccountingPeriodSelector::class,
+                StatsOverview::class,
+                RevenueTrends::class,
+                LatestIssuedInvoices::class,
+                TopCustomers::class,
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])

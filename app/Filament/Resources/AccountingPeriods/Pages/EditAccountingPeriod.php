@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Filament\Resources\AccountingPeriods\Pages;
+
+use App\Filament\Resources\AccountingPeriods\AccountingPeriodResource;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ViewAction;
+use Filament\Resources\Pages\EditRecord;
+
+class EditAccountingPeriod extends EditRecord
+{
+    protected static string $resource = AccountingPeriodResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ViewAction::make(),
+            DeleteAction::make(),
+        ];
+    }
+}
