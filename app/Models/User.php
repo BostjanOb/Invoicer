@@ -21,6 +21,20 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'signature',
+
+        'company_name',
+        'company_address',
+        'company_city',
+        'company_postcode',
+        'company_country',
+        'company_vat_number',
+        'company_logo',
+
+        'bank_iban',
+        'bank_bic',
+        'bank_name',
     ];
 
     /**

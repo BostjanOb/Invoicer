@@ -45,6 +45,11 @@ class Invoice extends Model
         return $this->items->sum(fn (InvoiceItem $item) => $item->price * $item->quantity);
     }
 
+    public function fullNumber(): string
+    {
+        return str_pad($this->number, 3, '0', STR_PAD_LEFT).'-'.$this->accountingPeriod->year;
+    }
+
     protected function casts(): array
     {
         return [

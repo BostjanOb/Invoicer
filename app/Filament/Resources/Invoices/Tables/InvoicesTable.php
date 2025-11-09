@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Tables;
 
 use App\Enums\InvoiceStatus;
+use App\Models\Invoice;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -44,7 +45,7 @@ class InvoicesTable
                 TextColumn::make('total')
                     ->label('Total')
                     ->money('EUR')
-                    ->state(fn ($record): float => $record->items->sum(fn ($item) => $item->price * $item->quantity))
+                    ->state(fn (Invoice $record): float => $record->total())
                     ->sortable(false),
                 TextColumn::make('service_text')
                     ->toggleable(isToggledHiddenByDefault: true),
