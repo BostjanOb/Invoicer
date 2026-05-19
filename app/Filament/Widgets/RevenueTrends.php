@@ -18,6 +18,8 @@ class RevenueTrends extends ChartWidget
 
     protected static ?int $sort = 4;
 
+    protected static bool $isDiscovered = false;
+
     #[On('accounting-period-changed')]
     public function updatePeriod(int $periodId): void
     {

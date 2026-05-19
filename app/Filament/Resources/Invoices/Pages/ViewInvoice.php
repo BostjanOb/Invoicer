@@ -4,9 +4,11 @@ namespace App\Filament\Resources\Invoices\Pages;
 
 use App\Enums\InvoiceStatus;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Models\AccountingPeriod;
 use App\Models\Invoice;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Enums\Width;
@@ -52,7 +54,7 @@ class ViewInvoice extends ViewRecord
                 ->visible(fn (Invoice $record): bool => $record->status === InvoiceStatus::ISSUED)
                 ->modalWidth(Width::Small)
                 ->schema([
-                    \Filament\Forms\Components\DatePicker::make('paid_at')
+                    DatePicker::make('paid_at')
                         ->label('Payment Date')
                         ->default(now())
                         ->native(false)
@@ -69,6 +71,12 @@ class ViewInvoice extends ViewRecord
                         ->success()
                         ->send();
                 }),
+            Action::make('pdf')
+                ->label('PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->url(fn (Invoice $record) => route('invoice.pdf', $record))
+                ->openUrlInNewTab(),
             EditAction::make(),
             Action::make('duplicate')
                 ->label('Duplicate')
@@ -86,7 +94,7 @@ class ViewInvoice extends ViewRecord
                             'paid_at',
                         ]);
                         $duplicate->status = InvoiceStatus::DRAFT;
-                        $duplicate->accounting_period_id = \App\Models\AccountingPeriod::where('year', now()->year)->first()?->id;
+                        $duplicate->accounting_period_id = AccountingPeriod::where('year', now()->year)->first()?->id;
                         $duplicate->save();
 
                         // Duplicate all invoice items

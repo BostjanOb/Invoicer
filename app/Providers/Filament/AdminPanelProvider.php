@@ -5,7 +5,6 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\EditProfile;
 use App\Filament\Widgets\AccountingPeriodSelector;
 use App\Filament\Widgets\LatestIssuedInvoices;
-use App\Filament\Widgets\RevenueTrends;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\TopCustomers;
 use Filament\Http\Middleware\Authenticate;
@@ -46,7 +45,6 @@ class AdminPanelProvider extends PanelProvider
                 AccountingPeriodSelector::class,
                 StatsOverview::class,
                 LatestIssuedInvoices::class,
-                RevenueTrends::class,
                 TopCustomers::class,
             ])
             ->middleware([
