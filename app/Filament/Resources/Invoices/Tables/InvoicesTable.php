@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Tables;
 
 use App\Enums\InvoiceStatus;
+use App\Models\AccountingPeriod;
 use App\Models\Invoice;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -47,6 +48,11 @@ class InvoicesTable
                     ->money('EUR')
                     ->state(fn (Invoice $record): float => $record->total())
                     ->sortable(false),
+                TextColumn::make('payout_amount')
+                    ->label('Payout')
+                    ->money('EUR')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('service_text')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -62,7 +68,7 @@ class InvoicesTable
                     ->label('Accounting Period')
                     ->relationship('accountingPeriod', 'year')
                     ->default(function () {
-                        return \App\Models\AccountingPeriod::where('is_closed', false)
+                        return AccountingPeriod::where('is_closed', false)
                             ->orderBy('year', 'desc')
                             ->first()?->id;
                     }),

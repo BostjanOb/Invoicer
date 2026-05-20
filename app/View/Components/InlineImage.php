@@ -4,7 +4,10 @@ namespace App\View\Components;
 
 use finfo;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\View\Component;
+use Illuminate\View\ViewException;
 
 class InlineImage extends Component
 {
@@ -12,17 +15,17 @@ class InlineImage extends Component
 
     public function render(): View
     {
-        if (! \Illuminate\Support\Str::of($this->image)->isUrl()) {
+        if (! Str::of($this->image)->isUrl()) {
             try {
                 $content = file_get_contents($this->image);
             } catch (\Exception $exception) {
-                throw new \Illuminate\View\ViewException('Image not found: '.$exception->getMessage());
+                throw new ViewException('Image not found: '.$exception->getMessage());
             }
         } else {
-            $response = \Illuminate\Support\Facades\Http::get($this->image);
+            $response = Http::get($this->image);
 
             if (! $response->successful()) {
-                throw new \Illuminate\View\ViewException('Failed to fetch the image: '.$response->toException());
+                throw new ViewException('Failed to fetch the image: '.$response->toException());
             }
 
             $content = $response->body();

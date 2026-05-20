@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Customers\Pages;
 
 use App\Filament\Resources\Customers\CustomerResource;
+use App\Filament\Resources\Customers\RelationManagers\InvoicesRelationManager;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -14,6 +15,13 @@ class ViewCustomer extends ViewRecord
     {
         return [
             EditAction::make(),
+        ];
+    }
+
+    protected function getAllRelationManagers(): array
+    {
+        return [
+            InvoicesRelationManager::class,
         ];
     }
 }

@@ -25,6 +25,8 @@ class InvoiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
+    protected static ?int $navigationSort = 1;
+
     public static function getRecordTitle(?Model $record): ?string
     {
         return $record?->number ?? 'Draft Invoice';

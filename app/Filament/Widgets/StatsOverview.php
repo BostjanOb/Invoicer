@@ -7,6 +7,7 @@ use App\Models\AccountingPeriod;
 use App\Models\Invoice;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
 
 class StatsOverview extends BaseWidget
@@ -43,54 +44,77 @@ class StatsOverview extends BaseWidget
             ->where('year', $currentPeriod->year - 1)
             ->first();
 
-        // Calculate current period stats
-        $currentRevenue = $this->calculateRevenue($currentPeriod->id, InvoiceStatus::PAID);
+        // Revenue counts both issued and paid invoices (drafts excluded).
+        $revenueStatuses = [InvoiceStatus::PAID, InvoiceStatus::ISSUED];
+
+        // Current displayed value is the full period total to date.
+        $currentRevenue = $this->calculateRevenue($currentPeriod->id, $revenueStatuses, deductPayout: true);
+
+        // Comparison baseline is capped to the same point in the previous year
+        // so an in-progress year is not measured against a full prior year.
+        $previousRevenue = $previousPeriod
+            ? $this->calculateRevenue(
+                $previousPeriod->id,
+                $revenueStatuses,
+                $this->yearToDateCutoff($previousPeriod->year),
+                deductPayout: true,
+            )
+            : 0;
+
         $currentOutstanding = $this->calculateRevenue($currentPeriod->id, InvoiceStatus::ISSUED);
         $currentDraft = $this->calculateRevenue($currentPeriod->id, InvoiceStatus::DRAFT);
-
-        // Calculate previous period stats for comparison
-        $previousRevenue = $previousPeriod
-            ? $this->calculateRevenue($previousPeriod->id, InvoiceStatus::PAID)
-            : 0;
-        $previousOutstanding = $previousPeriod
-            ? $this->calculateRevenue($previousPeriod->id, InvoiceStatus::ISSUED)
-            : 0;
-        $previousDraft = $previousPeriod
-            ? $this->calculateRevenue($previousPeriod->id, InvoiceStatus::DRAFT)
-            : 0;
 
         return [
             Stat::make('Total Revenue', $this->formatCurrency($currentRevenue))
                 ->description($this->getComparisonText($currentRevenue, $previousRevenue))
                 ->descriptionIcon($this->getComparisonIcon($currentRevenue, $previousRevenue))
                 ->color($this->getComparisonColor($currentRevenue, $previousRevenue))
-                ->chart($this->getMonthlyData($currentPeriod->id, InvoiceStatus::PAID)),
+                ->chart($this->getMonthlyData($currentPeriod->id, $revenueStatuses, deductPayout: true)),
 
             Stat::make('Outstanding Amount', $this->formatCurrency($currentOutstanding))
-                ->description($this->getComparisonText($currentOutstanding, $previousOutstanding))
-                ->descriptionIcon($this->getComparisonIcon($currentOutstanding, $previousOutstanding))
-                ->color($this->getComparisonColor($currentOutstanding, $previousOutstanding, true))
+                ->color('warning')
                 ->chart($this->getMonthlyData($currentPeriod->id, InvoiceStatus::ISSUED)),
 
             Stat::make('Draft Value', $this->formatCurrency($currentDraft))
-                ->description($this->getComparisonText($currentDraft, $previousDraft))
-                ->descriptionIcon($this->getComparisonIcon($currentDraft, $previousDraft))
                 ->color('gray')
-                ->chart($this->getMonthlyData($currentPeriod->id, InvoiceStatus::DRAFT)),
+                // Drafts have no issue_date yet, so chart them by creation date.
+                ->chart($this->getMonthlyData($currentPeriod->id, InvoiceStatus::DRAFT, 'created_at')),
         ];
     }
 
-    protected function calculateRevenue(int $periodId, InvoiceStatus $status): float
+    /**
+     * @param  array<int, InvoiceStatus>|InvoiceStatus  $statuses
+     */
+    protected function calculateRevenue(int $periodId, array|InvoiceStatus $statuses, ?Carbon $issuedOnOrBefore = null, bool $deductPayout = false): float
     {
+        $values = collect(is_array($statuses) ? $statuses : [$statuses])
+            ->map(fn (InvoiceStatus $status) => $status->value);
+
         return Invoice::query()
             ->where('accounting_period_id', $periodId)
-            ->where('status', $status)
+            ->whereIn('status', $values)
+            ->when($issuedOnOrBefore, fn ($query) => $query->where('issue_date', '<=', $issuedOnOrBefore))
             ->with('items')
             ->get()
-            ->sum(fn (Invoice $invoice) => $invoice->total());
+            ->sum(fn (Invoice $invoice) => $deductPayout ? $invoice->netRevenue() : $invoice->total());
     }
 
-    protected function getMonthlyData(int $periodId, InvoiceStatus $status): array
+    /**
+     * Maps "today" onto the given year so an in-progress year is compared
+     * against the previous year up to the same point in the year (by issue date).
+     */
+    protected function yearToDateCutoff(int $year): Carbon
+    {
+        return Carbon::create($year, 1, 1)
+            ->addDays(now()->dayOfYear - 1)
+            ->endOfDay();
+    }
+
+    /**
+     * @param  array<int, InvoiceStatus>|InvoiceStatus  $statuses
+     * @return array<int, float>
+     */
+    protected function getMonthlyData(int $periodId, array|InvoiceStatus $statuses, string $dateColumn = 'issue_date', bool $deductPayout = false): array
     {
         $period = AccountingPeriod::find($periodId);
 
@@ -98,17 +122,20 @@ class StatsOverview extends BaseWidget
             return [];
         }
 
+        $values = collect(is_array($statuses) ? $statuses : [$statuses])
+            ->map(fn (InvoiceStatus $status) => $status->value);
+
         $monthlyTotals = [];
 
         for ($month = 1; $month <= 12; $month++) {
             $total = Invoice::query()
                 ->where('accounting_period_id', $periodId)
-                ->where('status', $status)
-                ->whereYear('created_at', $period->year)
-                ->whereMonth('created_at', $month)
+                ->whereIn('status', $values)
+                ->whereYear($dateColumn, $period->year)
+                ->whereMonth($dateColumn, $month)
                 ->with('items')
                 ->get()
-                ->sum(fn (Invoice $invoice) => $invoice->total());
+                ->sum(fn (Invoice $invoice) => $deductPayout ? $invoice->netRevenue() : $invoice->total());
 
             $monthlyTotals[] = $total;
         }
@@ -149,18 +176,12 @@ class StatsOverview extends BaseWidget
         return $percentageChange > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
     }
 
-    protected function getComparisonColor(float $current, float $previous, bool $inverse = false): string
+    protected function getComparisonColor(float $current, float $previous): string
     {
         if ($previous == 0 || abs((($current - $previous) / $previous) * 100) < 0.01) {
             return 'gray';
         }
 
-        $isIncrease = $current > $previous;
-
-        if ($inverse) {
-            return $isIncrease ? 'danger' : 'success';
-        }
-
-        return $isIncrease ? 'success' : 'danger';
+        return $current > $previous ? 'success' : 'danger';
     }
 }

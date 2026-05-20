@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\AccountingPeriodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AccountingPeriod extends Model
 {
-    /** @use HasFactory<\Database\Factories\AccountingPeriodFactory> */
+    /** @use HasFactory<AccountingPeriodFactory> */
     use HasFactory;
 
     protected $fillable = [

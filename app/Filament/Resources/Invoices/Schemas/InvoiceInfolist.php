@@ -25,7 +25,7 @@ class InvoiceInfolist
                             ->badge()
                             ->placeholder('Not yet issued')
                             ->color(fn (?string $state): string => $state ? 'primary' : 'gray'),
-                        TextEntry::make('accounting_period')
+                        TextEntry::make('accountingPeriod.year')
                             ->label('Accounting Period')
                             ->placeholder('-'),
                         TextEntry::make('customer.name')
@@ -98,6 +98,22 @@ class InvoiceInfolist
                             ->size('lg')
                             ->weight('bold')
                             ->state(fn (Invoice $record): float => $record->items->sum(fn ($item) => $item->price * $item->quantity)),
+                        TextEntry::make('payout_amount')
+                            ->label('Payout')
+                            ->money('EUR')
+                            ->inlineLabel()
+                            ->columnSpanFull()
+                            ->alignRight()
+                            ->visible(fn (Invoice $record): bool => (float) $record->payout_amount > 0),
+                        TextEntry::make('net_revenue')
+                            ->label('Net Revenue')
+                            ->money('EUR')
+                            ->inlineLabel()
+                            ->columnSpanFull()
+                            ->alignRight()
+                            ->weight('bold')
+                            ->state(fn (Invoice $record): float => $record->netRevenue())
+                            ->visible(fn (Invoice $record): bool => (float) $record->payout_amount > 0),
                     ]),
 
             ]);

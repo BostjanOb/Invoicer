@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invoices\Schemas;
 
+use App\Models\AccountingPeriod;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -29,14 +30,21 @@ class InvoiceForm
                             ->relationship('accountingPeriod', 'year')
                             ->searchable()
                             ->preload()
-                            ->default(fn () => \App\Models\AccountingPeriod::where('year', now()->year)->first()?->id)
+                            ->default(fn () => AccountingPeriod::where('year', now()->year)->first()?->id)
                             ->required(),
                         DatePicker::make('payment_deadline')
                             ->label('Payment Deadline')
-                            ->native(false)
-                            ->required(),
+                            ->native(false),
                         TextInput::make('service_text')
                             ->maxLength(255)
+                            ->columnSpanFull(),
+                        TextInput::make('payout_amount')
+                            ->label('Payout amount')
+                            ->helperText('Portion of this invoice paid forward to a third party. Excluded from revenue; not shown on the PDF.')
+                            ->numeric()
+                            ->prefix('€')
+                            ->minValue(0)
+                            ->default(0)
                             ->columnSpanFull(),
                     ])
                     ->columns(2),

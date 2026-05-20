@@ -72,7 +72,7 @@ class TopCustomers extends BaseWidget
                     ->label('Total Revenue')
                     ->money('EUR')
                     ->getStateUsing(function (Customer $record): float {
-                        return $record->invoices->sum(fn (Invoice $invoice) => $invoice->total());
+                        return $record->invoices->sum(fn (Invoice $invoice) => $invoice->netRevenue());
                     }),
 
                 TextColumn::make('paid_invoices_count')
@@ -83,7 +83,7 @@ class TopCustomers extends BaseWidget
                     ->label('Avg Invoice')
                     ->money('EUR')
                     ->getStateUsing(function (Customer $record): float {
-                        $total = $record->invoices->sum(fn (Invoice $invoice) => $invoice->total());
+                        $total = $record->invoices->sum(fn (Invoice $invoice) => $invoice->netRevenue());
                         $count = $record->paid_invoices_count;
 
                         return $count > 0 ? $total / $count : 0;

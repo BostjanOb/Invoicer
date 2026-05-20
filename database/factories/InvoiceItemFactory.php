@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\InvoiceItem>
+ * @extends Factory<InvoiceItem>
  */
 class InvoiceItemFactory extends Factory
 {

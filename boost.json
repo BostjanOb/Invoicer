@@ -3,7 +3,8 @@
         "claude_code",
         "copilot",
         "codex",
-        "opencode"
+        "opencode",
+        "gemini"
     ],
     "cloud": false,
     "guidelines": true,

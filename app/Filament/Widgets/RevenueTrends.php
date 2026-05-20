@@ -115,7 +115,7 @@ class RevenueTrends extends ChartWidget
                 ->whereMonth('created_at', $month)
                 ->with('items')
                 ->get()
-                ->sum(fn (Invoice $invoice) => $invoice->total());
+                ->sum(fn (Invoice $invoice) => $invoice->netRevenue());
 
             $monthlyTotals[] = round($total, 2);
         }

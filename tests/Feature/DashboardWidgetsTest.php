@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -100,28 +101,28 @@ it('displays draft invoice value', function () {
         ->assertSee('€1,000.00');
 });
 
-it('displays year-over-year comparison', function () {
+it('compares revenue against the previous year up to the same point in the year', function () {
     $currentPeriod = AccountingPeriod::factory()->create(['year' => 2024]);
     $previousPeriod = AccountingPeriod::factory()->create(['year' => 2023]);
     $customer = Customer::factory()->create();
 
-    // Previous year revenue
+    // Previous year revenue, within the year-to-date window (early January).
     $previousInvoice = Invoice::factory()
         ->for($previousPeriod)
         ->for($customer)
         ->paid()
-        ->create();
+        ->create(['issue_date' => Carbon::create(2023, 1, 1)]);
 
     InvoiceItem::factory()
         ->for($previousInvoice)
         ->create(['price' => 1000, 'quantity' => 1]);
 
-    // Current year revenue (higher)
+    // Current year revenue (higher).
     $currentInvoice = Invoice::factory()
         ->for($currentPeriod)
         ->for($customer)
         ->paid()
-        ->create();
+        ->create(['issue_date' => Carbon::create(2024, 1, 1)]);
 
     InvoiceItem::factory()
         ->for($currentInvoice)
@@ -129,6 +130,145 @@ it('displays year-over-year comparison', function () {
 
     Livewire::test(StatsOverview::class, ['selectedPeriodId' => $currentPeriod->id])
         ->assertSee('+50.0% from last year');
+});
+
+it('excludes previous-year revenue created after the year-to-date cutoff', function () {
+    $currentPeriod = AccountingPeriod::factory()->create(['year' => 2024]);
+    $previousPeriod = AccountingPeriod::factory()->create(['year' => 2023]);
+    $customer = Customer::factory()->create();
+
+    // Previous year revenue issued after today's day-of-year, so it must not
+    // count toward the comparison baseline.
+    $afterCutoff = Carbon::create(2023, 1, 1)->addDays(now()->dayOfYear);
+
+    $previousInvoice = Invoice::factory()
+        ->for($previousPeriod)
+        ->for($customer)
+        ->paid()
+        ->create(['issue_date' => $afterCutoff]);
+
+    InvoiceItem::factory()
+        ->for($previousInvoice)
+        ->create(['price' => 1000, 'quantity' => 1]);
+
+    $currentInvoice = Invoice::factory()
+        ->for($currentPeriod)
+        ->for($customer)
+        ->paid()
+        ->create(['issue_date' => Carbon::create(2024, 1, 1)]);
+
+    InvoiceItem::factory()
+        ->for($currentInvoice)
+        ->create(['price' => 1500, 'quantity' => 1]);
+
+    Livewire::test(StatsOverview::class, ['selectedPeriodId' => $currentPeriod->id])
+        ->assertSee('First year')
+        ->assertDontSee('from last year');
+});
+
+it('counts paid and issued invoices in total revenue', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create();
+
+    $paid = Invoice::factory()->for($period)->for($customer)->paid()->create();
+    InvoiceItem::factory()->for($paid)->create(['price' => 1000, 'quantity' => 1]);
+
+    $issued = Invoice::factory()->for($period)->for($customer)->issued()->create();
+    InvoiceItem::factory()->for($issued)->create(['price' => 500, 'quantity' => 1]);
+
+    Livewire::test(StatsOverview::class, ['selectedPeriodId' => $period->id])
+        ->assertSee('Total Revenue')
+        ->assertSee('€1,500.00');
+});
+
+it('excludes the payout amount from total revenue', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create();
+
+    $invoice = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->paid()
+        ->withPayout(500)
+        ->create();
+
+    InvoiceItem::factory()
+        ->for($invoice)
+        ->create(['price' => 1000, 'quantity' => 2]);
+
+    // Total is €2,000 but €500 is paid forward, so revenue is €1,500.
+    Livewire::test(StatsOverview::class, ['selectedPeriodId' => $period->id])
+        ->assertSee('Total Revenue')
+        ->assertSee('€1,500.00')
+        ->assertDontSee('€2,000.00');
+});
+
+it('does not deduct the payout amount from outstanding or draft value', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create();
+
+    $issued = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->issued()
+        ->withPayout(200)
+        ->create();
+    InvoiceItem::factory()->for($issued)->create(['price' => 500, 'quantity' => 1]);
+
+    $draft = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->withPayout(100)
+        ->create(['status' => InvoiceStatus::DRAFT]);
+    InvoiceItem::factory()->for($draft)->create(['price' => 250, 'quantity' => 1]);
+
+    // Outstanding/Draft are receivables and pipeline, not revenue: gross totals.
+    Livewire::test(StatsOverview::class, ['selectedPeriodId' => $period->id])
+        ->assertSee('Outstanding Amount')
+        ->assertSee('€500.00')
+        ->assertSee('Draft Value')
+        ->assertSee('€250.00');
+});
+
+it('deducts the payout amount from top customer revenue', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create(['name' => 'Pass Through Customer']);
+
+    $invoice = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->paid()
+        ->withPayout(1000)
+        ->create();
+
+    InvoiceItem::factory()->for($invoice)->create(['price' => 5000, 'quantity' => 1]);
+
+    // Filament money column renders with the app locale (sl): 4.000,00 €.
+    Livewire::test(TopCustomers::class, ['selectedPeriodId' => $period->id])
+        ->assertSee('Pass Through Customer')
+        ->assertSee('4.000,00')
+        ->assertDontSee('5.000,00');
+});
+
+it('does not show a year-over-year comparison for outstanding amount or draft value', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create();
+
+    $issued = Invoice::factory()->for($period)->for($customer)->issued()->create();
+    InvoiceItem::factory()->for($issued)->create(['price' => 500, 'quantity' => 1]);
+
+    $draft = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->create(['status' => InvoiceStatus::DRAFT]);
+    InvoiceItem::factory()->for($draft)->create(['price' => 250, 'quantity' => 1]);
+
+    // No previous period exists, so the revenue card shows "First year" rather
+    // than a comparison — "from last year" must not appear at all.
+    Livewire::test(StatsOverview::class, ['selectedPeriodId' => $period->id])
+        ->assertSee('Outstanding Amount')
+        ->assertSee('Draft Value')
+        ->assertDontSee('from last year');
 });
 
 it('displays revenue trends chart', function () {
@@ -204,6 +344,28 @@ it('calculates invoice total correctly', function () {
     InvoiceItem::factory()->for($invoice)->create(['price' => 50, 'quantity' => 3]);
 
     expect($invoice->total())->toBe(350.0);
+});
+
+it('calculates net revenue as total minus payout', function () {
+    $invoice = Invoice::factory()->withPayout(50)->create();
+
+    InvoiceItem::factory()->for($invoice)->create(['price' => 100, 'quantity' => 2]);
+    InvoiceItem::factory()->for($invoice)->create(['price' => 50, 'quantity' => 3]);
+
+    $invoice->load('items');
+
+    expect($invoice->total())->toBe(350.0)
+        ->and($invoice->netRevenue())->toBe(300.0);
+});
+
+it('treats a null payout as zero net revenue deduction', function () {
+    $invoice = Invoice::factory()->create(['payout_amount' => null]);
+
+    InvoiceItem::factory()->for($invoice)->create(['price' => 100, 'quantity' => 1]);
+
+    $invoice->load('items');
+
+    expect($invoice->netRevenue())->toBe(100.0);
 });
 
 it('updates widgets when accounting period changes', function () {

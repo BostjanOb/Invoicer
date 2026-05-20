@@ -23,6 +23,7 @@ class Invoice extends Model
         'payment_deadline',
         'paid_at',
         'service_text',
+        'payout_amount',
     ];
 
     public function customer(): BelongsTo
@@ -45,6 +46,11 @@ class Invoice extends Model
         return $this->items->sum(fn (InvoiceItem $item) => $item->price * $item->quantity);
     }
 
+    public function netRevenue(): float
+    {
+        return $this->total() - (float) ($this->payout_amount ?? 0);
+    }
+
     public function fullNumber(): string
     {
         return str_pad($this->number, 3, '0', STR_PAD_LEFT).'-'.$this->accountingPeriod->year;
@@ -56,6 +62,7 @@ class Invoice extends Model
             'issue_date' => 'date',
             'payment_deadline' => 'date',
             'paid_at' => 'date',
+            'payout_amount' => 'decimal:2',
             'status' => InvoiceStatus::class,
         ];
     }

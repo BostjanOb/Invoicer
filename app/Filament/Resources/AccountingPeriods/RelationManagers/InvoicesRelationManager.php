@@ -49,8 +49,7 @@ class InvoicesRelationManager extends RelationManager
                     ->options(InvoiceStatus::class)
                     ->required(),
                 DatePicker::make('issue_date'),
-                DatePicker::make('payment_deadline')
-                    ->required(),
+                DatePicker::make('payment_deadline'),
                 DatePicker::make('paid_at'),
                 TextInput::make('service_text'),
             ]);
@@ -105,14 +104,14 @@ class InvoicesRelationManager extends RelationManager
                 TextColumn::make('issue_date')
                     ->date()
                     ->sortable(),
-                TextColumn::make('payment_deadline')
-                    ->date()
-                    ->sortable(),
                 TextColumn::make('paid_at')
                     ->date()
                     ->sortable(),
-                TextColumn::make('service_text')
-                    ->searchable(),
+                TextColumn::make('total')
+                    ->label('Total')
+                    ->money('EUR')
+                    ->state(fn (Invoice $record): float => $record->total())
+                    ->sortable(false),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
