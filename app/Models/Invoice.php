@@ -51,6 +51,11 @@ class Invoice extends Model
         return $this->total() - (float) ($this->payout_amount ?? 0);
     }
 
+    public function tax(): float
+    {
+        return $this->accountingPeriod->getTaxCalculator()->calculate($this);
+    }
+
     public function fullNumber(): string
     {
         return str_pad($this->number, 3, '0', STR_PAD_LEFT).'-'.$this->accountingPeriod->year;

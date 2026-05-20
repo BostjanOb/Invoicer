@@ -114,6 +114,13 @@ class InvoiceInfolist
                             ->weight('bold')
                             ->state(fn (Invoice $record): float => $record->netRevenue())
                             ->visible(fn (Invoice $record): bool => (float) $record->payout_amount > 0),
+                        TextEntry::make('tax')
+                            ->label('Tax')
+                            ->money('EUR')
+                            ->inlineLabel()
+                            ->columnSpanFull()
+                            ->alignRight()
+                            ->state(fn (Invoice $record): float => $record->tax()),
                     ]),
 
             ]);

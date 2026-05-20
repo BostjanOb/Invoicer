@@ -64,8 +64,9 @@ class InvoiceForm
                                     ->columnSpan(2),
                                 TextInput::make('quantity')
                                     ->numeric()
+                                    ->step(0.1)
                                     ->default(1)
-                                    ->minValue(1)
+                                    ->minValue(0.1)
                                     ->required(),
                                 TextInput::make('price')
                                     ->numeric()

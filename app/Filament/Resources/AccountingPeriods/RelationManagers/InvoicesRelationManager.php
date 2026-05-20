@@ -125,6 +125,7 @@ class InvoicesRelationManager extends RelationManager
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->paginated(false)
             ->filters([
                 TrashedFilter::make(),
             ])

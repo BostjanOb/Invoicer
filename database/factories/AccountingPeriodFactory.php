@@ -20,6 +20,8 @@ class AccountingPeriodFactory extends Factory
         return [
             'year' => fake()->unique()->numberBetween(2020, 2030),
             'is_closed' => false,
+            'monthly_tax_paid' => 0.00,
+            'tax_calculator' => null,
         ];
     }
 
