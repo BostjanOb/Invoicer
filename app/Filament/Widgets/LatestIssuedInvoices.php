@@ -13,7 +13,7 @@ use Livewire\Attributes\On;
 
 class LatestIssuedInvoices extends BaseWidget
 {
-    protected static ?string $heading = 'Latest Issued Invoices';
+    protected static ?string $heading = 'Unpaid Invoices & Drafts';
 
     protected int|string|array $columnSpan = 'full';
 
@@ -43,7 +43,7 @@ class LatestIssuedInvoices extends BaseWidget
             ->query(
                 Invoice::query()
                     ->where('accounting_period_id', $this->selectedPeriodId)
-                    ->where('status', InvoiceStatus::ISSUED)
+                    ->whereIn('status', [InvoiceStatus::ISSUED, InvoiceStatus::DRAFT])
                     ->with(['customer', 'items'])
                     ->latest('issue_date')
                     ->limit(10)
@@ -56,6 +56,11 @@ class LatestIssuedInvoices extends BaseWidget
                 TextColumn::make('customer.name')
                     ->label('Customer')
                     ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
                     ->sortable(),
 
                 TextColumn::make('issue_date')

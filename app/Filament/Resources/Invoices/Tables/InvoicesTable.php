@@ -11,6 +11,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -46,6 +47,7 @@ class InvoicesTable
                 TextColumn::make('total')
                     ->label('Total')
                     ->money('EUR')
+                    ->weight(FontWeight::SemiBold)
                     ->state(fn (Invoice $record): float => $record->total())
                     ->sortable(false),
                 TextColumn::make('payout_amount')
