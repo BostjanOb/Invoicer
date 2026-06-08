@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AccountingPeriods\RelationManagers;
 
 use App\Enums\InvoiceStatus;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Invoices\Tables\InvoiceTableFilters;
 use App\Models\Invoice;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
@@ -127,6 +128,8 @@ class InvoicesRelationManager extends RelationManager
             ])
             ->paginated(false)
             ->filters([
+                InvoiceTableFilters::customer(),
+                InvoiceTableFilters::status(),
                 TrashedFilter::make(),
             ])
             ->headerActions([

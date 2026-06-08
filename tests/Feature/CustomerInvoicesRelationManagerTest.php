@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\InvoiceStatus;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Resources\Customers\RelationManagers\InvoicesRelationManager;
 use App\Models\AccountingPeriod;
@@ -65,4 +66,39 @@ it('can group the invoices by accounting period', function () {
     ])
         ->set('tableGrouping', 'accountingPeriod.year')
         ->assertCanSeeTableRecords([$invoice]);
+});
+
+it('filters customer invoices by status and year period', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2025]);
+    $otherPeriod = AccountingPeriod::factory()->create(['year' => 2024]);
+
+    $matchingInvoice = Invoice::factory()
+        ->for($this->customer)
+        ->for($period, 'accountingPeriod')
+        ->paid()
+        ->create();
+
+    $otherStatusInvoice = Invoice::factory()
+        ->for($this->customer)
+        ->for($period, 'accountingPeriod')
+        ->issued()
+        ->create();
+
+    $otherPeriodInvoice = Invoice::factory()
+        ->for($this->customer)
+        ->for($otherPeriod, 'accountingPeriod')
+        ->paid()
+        ->create();
+
+    Livewire::test(InvoicesRelationManager::class, [
+        'ownerRecord' => $this->customer,
+        'pageClass' => ViewCustomer::class,
+    ])
+        ->filterTable('accounting_period_id', $period->id)
+        ->filterTable('status', InvoiceStatus::PAID->value)
+        ->assertCanSeeTableRecords([$matchingInvoice])
+        ->assertCanNotSeeTableRecords([
+            $otherStatusInvoice,
+            $otherPeriodInvoice,
+        ]);
 });

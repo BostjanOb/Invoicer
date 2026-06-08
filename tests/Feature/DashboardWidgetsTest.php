@@ -293,9 +293,41 @@ it('displays latest issued invoices', function () {
         ->create(['price' => 1000, 'quantity' => 1]);
 
     Livewire::test(LatestIssuedInvoices::class, ['selectedPeriodId' => $period->id])
-        ->assertSee('Latest Issued Invoices')
+        ->assertSee('Unpaid Invoices & Drafts')
         ->assertSee('Test Customer')
         ->assertSee('123');
+});
+
+it('filters latest issued invoices by customer and status', function () {
+    $period = AccountingPeriod::factory()->create(['year' => 2024]);
+    $customer = Customer::factory()->create(['name' => 'Filtered Customer']);
+    $otherCustomer = Customer::factory()->create(['name' => 'Other Customer']);
+
+    $matchingInvoice = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->issued(123)
+        ->create();
+
+    $otherCustomerInvoice = Invoice::factory()
+        ->for($period)
+        ->for($otherCustomer)
+        ->issued(124)
+        ->create();
+
+    $otherStatusInvoice = Invoice::factory()
+        ->for($period)
+        ->for($customer)
+        ->create(['status' => InvoiceStatus::DRAFT]);
+
+    Livewire::test(LatestIssuedInvoices::class, ['selectedPeriodId' => $period->id])
+        ->filterTable('customer', $customer->id)
+        ->filterTable('status', InvoiceStatus::ISSUED->value)
+        ->assertCanSeeTableRecords([$matchingInvoice])
+        ->assertCanNotSeeTableRecords([
+            $otherCustomerInvoice,
+            $otherStatusInvoice,
+        ]);
 });
 
 it('displays top customers by revenue', function () {

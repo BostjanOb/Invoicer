@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Invoices\Tables;
 
-use App\Enums\InvoiceStatus;
-use App\Models\AccountingPeriod;
 use App\Models\Invoice;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -13,7 +11,6 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -60,20 +57,7 @@ class InvoicesTable
             ])
             ->defaultSort('issue_date', 'desc')
             ->filters([
-                SelectFilter::make('customer')
-                    ->relationship('customer', 'name')
-                    ->searchable()
-                    ->preload(),
-                SelectFilter::make('status')
-                    ->options(InvoiceStatus::class),
-                SelectFilter::make('accounting_period_id')
-                    ->label('Accounting Period')
-                    ->relationship('accountingPeriod', 'year')
-                    ->default(function () {
-                        return AccountingPeriod::where('is_closed', false)
-                            ->orderBy('year', 'desc')
-                            ->first()?->id;
-                    }),
+                ...InvoiceTableFilters::all(),
                 TrashedFilter::make(),
             ])
             ->recordActions([

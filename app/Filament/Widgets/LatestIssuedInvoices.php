@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\InvoiceStatus;
+use App\Filament\Resources\Invoices\Tables\InvoiceTableFilters;
 use App\Models\AccountingPeriod;
 use App\Models\Invoice;
 use Filament\Actions\Action;
@@ -85,6 +86,13 @@ class LatestIssuedInvoices extends BaseWidget
                         $state > 30 => 'warning',
                         default => 'success',
                     }),
+            ])
+            ->filters([
+                InvoiceTableFilters::customer(),
+                InvoiceTableFilters::status([
+                    InvoiceStatus::DRAFT->value => InvoiceStatus::DRAFT->getLabel(),
+                    InvoiceStatus::ISSUED->value => InvoiceStatus::ISSUED->getLabel(),
+                ]),
             ])
             ->actions([
                 Action::make('view')

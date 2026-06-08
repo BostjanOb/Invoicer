@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Customers\RelationManagers;
 
 use App\Enums\InvoiceStatus;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Invoices\Tables\InvoiceTableFilters;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Filament\Actions\AssociateAction;
@@ -143,6 +144,8 @@ class InvoicesRelationManager extends RelationManager
                     ->collapsible(),
             ])
             ->filters([
+                InvoiceTableFilters::accountingPeriod(),
+                InvoiceTableFilters::status(),
                 TrashedFilter::make(),
             ])
             ->headerActions([
