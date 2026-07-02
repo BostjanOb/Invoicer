@@ -105,7 +105,7 @@
         <div class="font-bold border-b-[#F0A941] border-b-2">
             <p>{{ $item->title }}</p>
             @if($item->description)
-                <p class="text-[10px]">{{ $item->description }}</p>
+                <p class="text-[8px] font-light">{{ $item->description }}</p>
             @endif
         </div>
         <div class="text-right border-b-[#D9D9D9] border-b-2">
