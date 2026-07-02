@@ -83,11 +83,11 @@
     <div class="grid grid-cols-2">
         <div class="flex flex-col gap-1">
             <p class="text-neutral-500">Datum računa:</p>
-            <b>{{ $invoice->issue_date->isoFormat('D. MMMM YYYY') }}</b>
+            <b>{{ $invoice?->issue_date?->isoFormat('D. MMMM YYYY') }}</b>
         </div>
         <div class="flex flex-col gap-1">
             <p class="text-neutral-500">Datum plačila:</p>
-            <b>{{ $invoice->payment_deadline->isoFormat('D. MMMM YYYY') }}</b>
+            <b>{{ $invoice?->payment_deadline?->isoFormat('D. MMMM YYYY') }}</b>
         </div>
     </div>
 </div>
